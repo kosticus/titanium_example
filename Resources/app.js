@@ -1,101 +1,123 @@
-// this sets the background color of the master UIView (when there are no windows/tab groups on it)
-Titanium.UI.setBackgroundColor('#000');
+Titanium.UI.setBackgroundColor('#ffffff');
+if (Ti.Network.online){
+	
+}
 
-// create tab group
-var tabGroup = Titanium.UI.createTabGroup();
-
-
-//
-// create base UI tab and root window
-//
-var win1 = Titanium.UI.createWindow({  
-    title:'Tab 1',
-    backgroundColor:'#fff'
-});
-var tab1 = Titanium.UI.createTab({  
-    icon:'KS_nav_views.png',
-    title:'Tab 1',
-    window:win1
+var window = Ti.UI.createWindow({
+	title: 'Test',
+	backgroundColor: 'Yellow',
 });
 
-var label1 = Titanium.UI.createLabel({
-	color:'#999',
-	text:'I am Window 1',
-	font:{fontSize:20,fontFamily:'Helvetica Neue'},
-	textAlign:'center',
-	width:'auto'
-});
+var self, history = [], uiElements = [];
+// iphone
+if (Ti.Platform.osname === 'iphone') {
+	self = Ti.UI.iOS.createNavigationWindow({
+		window: window,
+	});
+} else if (Ti.Platform.osname === 'ipad') {
+	// ipad
+	var detailNavigationWindow = Ti.UI.iOS.createNavigationWindow({
+		title: 'detailWindow',
+		window: Ti.UI.createWindow({ backgroundColor: 'Green' })
+	});
+	
+	var masterNavigationWindow = Ti.UI.iOS.createNaviationWindow({
+		title: 'masterWindow',
+		window: window
+	});
+	
+	var splitWindow = Ti.UI.iPad.createSplitWindow({
+		detailView: detailNavigationWindow,
+		masterView: window,
+	});
+	// simulate the iphone and mobile web navigation group
+	self = {
+		open: function() {
+			splitWindow.open();
+		},
+		openWindow: function(window) {
+			splitWindow.openWindow(window);
+		}
+	};
+} else if (Ti.Platform.osname === 'android') {
+	// android, also simulate the iphone and mobile web navigation group
+	self = {
+		open: function() {
+			window.open();
+		},
+		windowOpen: function(window) {
+			window.open();
+		},
+	};
+} else {
+	// blackberry and mobileweb
+	self = Ti.UI.MobileWeb.createNavigationGroup({
+		window: window
+	});
+}
 
-win1.add(label1);
-
-//
-// create controls tab and root window
-//
-var win2 = Titanium.UI.createWindow({  
-    title:'Tab 2',
-    backgroundColor:'#fff'
-});
-var tab2 = Titanium.UI.createTab({  
-    icon:'KS_nav_ui.png',
-    title:'Tab 2',
-    window:win2
-});
-
-var label2 = Titanium.UI.createLabel({
-	color:'#999',
-	text:'I am Window 2',
-	font:{fontSize:20,fontFamily:'Helvetica Neue'},
-	textAlign:'center',
-	width:'auto'
-});
-
-win2.add(label2);
-
-
-
-//
-//  add tabs
-//
-tabGroup.addTab(tab1);  
-tabGroup.addTab(tab2);  
-
-
-// open tab group
-tabGroup.open();
-
-
-// added during app creation. this will automatically login to
-// ACS for your application and then fire an event (see below)
-// when connected or errored. if you do not use ACS in your
-// application as a client, you should remove this block
-(function(){
-var ACS = require('ti.cloud'),
-    env = Ti.App.deployType.toLowerCase() === 'production' ? 'production' : 'development',
-    username = Ti.App.Properties.getString('acs-username-'+env),
-    password = Ti.App.Properties.getString('acs-password-'+env);
-
-// if not configured, just return
-if (!env || !username || !password) { return; }
 /**
- * Appcelerator Cloud (ACS) Admin User Login Logic
- *
- * fires login.success with the user as argument on success
- * fires login.failed with the result as argument on error
+ * 
+ * @param {String} name, title of the table view row
+ * @param {String} window, path to the ui window
  */
-ACS.Users.login({
-	login:username,
-	password:password,
-}, function(result){
-	if (env==='development') {
-		Ti.API.info('ACS Login Results for environment `'+env+'`:');
-		Ti.API.info(result);
-	}
-	if (result && result.success && result.users && result.users.length){
-		Ti.App.fireEvent('login.success',result.users[0],env);
-	} else {
-		Ti.App.fireEvent('login.failed',result,env);
-	}
-});
+var createUI = function(name, window) {
+	uiElements.push({
+		name: name,
+		window: window
+	});
+};
 
-})();
+// add elements
+createUI('Alerts', 'ui/Alerts');
+createUI('Button', 'ui/Button');
+createUI('ImageView', 'ui/ImageView');
+createUI('Label', 'ui/Label');
+createUI('ListView', 'ui/ListView');
+createUI('PickerView', 'ui/PickerView');
+createUI('ProgressBar', 'ui/ProgressBar');
+createUI('ScrollableView', 'ui/ScrollableView');
+createUI('ScrollView', 'ui/ScrollView');
+createUI('Switch', 'ui/Switch');
+createUI('WebView', 'ui/WebView');
 
+var tableView = Ti.Ui.createTableView({});
+var rows = [];
+for (var i = 0; i < uiElements.length; i++) {
+	var uiElement = uiElements[i];
+	var row = Ti.UI.createTableViewRow({
+		title: uiElement.name,
+		_window: uiElement.window
+	});
+	
+	row.addEventListener('click', function(e) {
+		e.cancelBubble = true;
+		openWindow({
+			window: this._window
+		});
+	});
+	rows.push(row);
+}
+
+tableview.setData(rows);
+window.add(tableView);
+
+function openWindow(e) {
+	var NewWindow = require(e.windpw);
+	var newWindow = new NewWindow(e.arg);
+	
+	newWindow.setTitle(e.window.replace('ui/', ''));
+	self.openWindow(newWindow, { animated: true });
+	history.push(newWindow);
+}
+
+function closeWindow(e) {
+	var currentWindow = history.pop();
+	currentWindow.close();
+}
+
+Ti.App.addEventListener('openWindow', openWindow);
+
+Ti.App.addEventListener('closeWindow', closeWindow);
+
+self.open();
