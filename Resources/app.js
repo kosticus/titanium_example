@@ -21,7 +21,7 @@ if (Ti.Platform.osname === 'iphone') {
 		window: Ti.UI.createWindow({ backgroundColor: 'Green' })
 	});
 	
-	var masterNavigationWindow = Ti.UI.iOS.createNaviationWindow({
+	var masterNavigationWindow = Ti.UI.iOS.createNavigationWindow({
 		title: 'masterWindow',
 		window: window
 	});
@@ -81,7 +81,7 @@ createUI('ScrollView', 'ui/ScrollView');
 createUI('Switch', 'ui/Switch');
 createUI('WebView', 'ui/WebView');
 
-var tableView = Ti.Ui.createTableView({});
+var tableView = Ti.UI.createTableView({});
 var rows = [];
 for (var i = 0; i < uiElements.length; i++) {
 	var uiElement = uiElements[i];
@@ -99,11 +99,11 @@ for (var i = 0; i < uiElements.length; i++) {
 	rows.push(row);
 }
 
-tableview.setData(rows);
+tableView.setData(rows);
 window.add(tableView);
 
 function openWindow(e) {
-	var NewWindow = require(e.windpw);
+	var NewWindow = require(e.window);
 	var newWindow = new NewWindow(e.arg);
 	
 	newWindow.setTitle(e.window.replace('ui/', ''));
